@@ -16,21 +16,44 @@ export default function Home() {
   }
 
   async function fetchDays(address, network) {
-    const baseUrl = network === 'base'
-      ? 'https://api.basescan.org/api'
-      : 'https://api.etherscan.io/api';
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY;
-    const url = `${baseUrl}?module=account&action=txlist&address=${address}&sort=asc&apikey=${apiKey}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    if (data.result && data.result.length > 0) {
-      const firstTx = data.result[0].timeStamp * 1000;
-      const days = Math.floor((Date.now() - firstTx) / (1000 * 60 * 60 * 24));
-      return days;
-    } else {
-      return 0;
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY || "вставь_сюда_свой_ключ";
+  
+  const baseUrl = network === 'base'
+    ? 'https://api.basescan.org/v2/api'
+    : 'https://api.etherscan.io/v2/api';
+
+  const body = {
+    id: 1,
+    jsonrpc: "2.0",
+    method: "account_txlist",
+    params: {
+      address: address,
+      startblock: 0,
+      endblock: 99999999,
+      sort: "asc",
     }
+  };
+
+  const res = await fetch(baseUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-apikey": apiKey
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if (data.result && data.result.length > 0) {
+    const firstTx = data.result[0].timeStamp * 1000;
+    const days = Math.floor((Date.now() - firstTx) / (1000 * 60 * 60 * 24));
+    return days;
+  } else {
+    console.warn("No transactions found or invalid API response:", data);
+    return 0;
   }
+}
 
   useEffect(() => {
     if (account) {
