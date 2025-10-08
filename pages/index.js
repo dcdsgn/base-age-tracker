@@ -15,42 +15,29 @@ export default function Home() {
     }
   }
 
-  async function fetchDays(address, network) {
+async function fetchDays(address, network) {
   const apiKey = process.env.NEXT_PUBLIC_API_KEY || "вставь_сюда_свой_ключ";
-  
-  const baseUrl = network === 'base'
-    ? 'https://api.basescan.org/v2/api'
-    : 'https://api.etherscan.io/v2/api';
 
-  const body = {
-    id: 1,
-    jsonrpc: "2.0",
-    method: "account_txlist",
-    params: {
-      address: address,
-      startblock: 0,
-      endblock: 99999999,
-      sort: "asc",
-    }
-  };
+  // Определяем chainId и базовый URL
+  const isBase = network === "base";
+  const chainId = isBase ? 8453 : 1; // Base mainnet = 8453, Ethereum mainnet = 1
 
-  const res = await fetch(baseUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-apikey": apiKey
-    },
-    body: JSON.stringify(body)
-  });
+  const baseUrl = isBase
+    ? "https://api.basescan.org/v2/api"
+    : "https://api.etherscan.io/v2/api";
 
+  // Новый формат запроса (REST, не JSON)
+  const url = `${baseUrl}?chainid=${chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+
+  const res = await fetch(url);
   const data = await res.json();
 
-  if (data.result && data.result.length > 0) {
-    const firstTx = data.result[0].timeStamp * 1000;
+  if (data.status === "1" && data.result && data.result.length > 0) {
+    const firstTx = Number(data.result[0].timeStamp) * 1000;
     const days = Math.floor((Date.now() - firstTx) / (1000 * 60 * 60 * 24));
     return days;
   } else {
-    console.warn("No transactions found or invalid API response:", data);
+    console.warn("No transactions or bad API response:", data);
     return 0;
   }
 }
