@@ -1,26 +1,17 @@
-# Base Onchain Age Tracker 🪩
+# Base Onchain Age Tracker v2
 
-A simple Next.js dApp to track how many days your Ethereum and Base wallet addresses have existed since their first transaction.
+Updated version with Etherscan/BaseScan v2 API support and colored badges.
 
-## 🚀 Features
-- Connect MetaMask
-- Display ETH & Base address age
-- Minimal Tailwind UI
-- Ready for free deploy on Vercel
+## Setup
 
-## 🧠 Setup
-1. Run `npm install`
+1. `npm install`
 2. Create `.env.local` with:
-   ```bash
-   NEXT_PUBLIC_API_KEY=your_etherscan_or_universal_key
-   ```
-3. Run locally:
-   ```bash
-   npm run dev
-   ```
+```
+NEXT_PUBLIC_API_KEY=your_api_key_here
+```
+3. `npm run dev`
 
-## 🌐 Deploy
-- Use the Vercel 1-click deploy or push to GitHub and import into Vercel.
+## Deploy
+- Use Vercel (import repo) or push to GitHub and connect Vercel.
 
-## License
-MIT
+Note: If you don't have an API key, you can temporarily paste one into `pages/index.js` FALLBACK_KEY for testing.
