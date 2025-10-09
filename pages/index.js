@@ -115,7 +115,7 @@ export default function Home() {
           </div>
         )}
 
-        <footer className="mt-8 text-xs text-gray-500">Built for Base ⚡ by tuneoftheday.cyber</footer>
+        <footer className="mt-8 text-xs text-gray-500">Built for Base ⚡ by dcdsgn.eth</footer>
       </div>
     </main>
   );
