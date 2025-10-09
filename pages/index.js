@@ -67,35 +67,56 @@ export default function Home() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 text-center text-white bg-gradient-to-br from-blue-900 to-blue-600">
-      <h1 className="text-3xl mb-6">🪩 Base Onchain Age Tracker</h1>
-      {address ? (
-        <div>
-          <p className="mb-4">Connected: {address}</p>
-          <div className="space-y-3">
-            <div>
-              <p>Ethereum age:</p>
-              <p className="text-lg font-semibold">
-                {ethDays} days {getBadge(Number(ethDays))}
-              </p>
-            </div>
-            <div>
-              <p>Base age:</p>
-              <p className="text-lg font-semibold">
-                {baseDays} days {getBadge(Number(baseDays))}
-              </p>
+    <main className="flex flex-col justify-between min-h-screen bg-white text-black font-sans">
+      <div className="flex flex-col items-center justify-center flex-grow text-center animate-fadeIn">
+        <h1 className="text-2xl font-semibold mb-6 text-[#0052FF]">
+          🪩 Base Onchain Age Tracker
+        </h1>
+        {address ? (
+          <div>
+            <p className="mb-4 text-gray-700">Connected: {address}</p>
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm uppercase text-gray-500">Ethereum age</p>
+                <p className="text-xl font-medium mt-1">
+                  {ethDays} days {getBadge(Number(ethDays))}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm uppercase text-gray-500">Base age</p>
+                <p className="text-xl font-medium mt-1">
+                  {baseDays} days {getBadge(Number(baseDays))}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <p>Connect wallet to view your onchain age</p>
-      )}
-      <p className="text-sm text-gray-400 mt-8">
+        ) : (
+          <button
+            onClick={async () => {
+              if (window.ethereum) {
+                const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+                const addr = accounts[0];
+                setAddress(addr);
+                fetchAges(addr);
+              }
+            }}
+            className="bg-[#0052FF] text-white px-6 py-2 mt-6 uppercase tracking-wide"
+          >
+            Connect Wallet
+          </button>
+        )}
+      </div>
+      <footer className="w-full text-center py-4 text-sm text-gray-500 border-t border-gray-200">
         Built for Base ⚡ by dcdsgn.eth ·{" "}
-        <a href="/debug" target="_blank" rel="noopener noreferrer" className="underline text-gray-300">
+        <a
+          href="/debug"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline text-[#0052FF] hover:text-[#003FCC]"
+        >
           Debug
         </a>
-      </p>
+      </footer>
     </main>
   );
 }

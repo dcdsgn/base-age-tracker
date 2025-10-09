@@ -41,29 +41,29 @@ export default function Debug() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-8 text-center text-white bg-gray-900">
-      <h1 className="text-2xl mb-4">🧩 Debug Panel</h1>
-      {address ? <p>Connected: {address}</p> : <p>Connect wallet to test</p>}
+    <main className="flex flex-col items-center justify-center min-h-screen bg-white text-black font-sans">
+      <h1 className="text-2xl mb-4 text-[#0052FF]">🧩 Debug Panel</h1>
+      {address ? <p className="mb-2">Connected: {address}</p> : <p>Connect wallet to test</p>}
 
       <button
         onClick={testAPI}
-        className="mt-6 px-4 py-2 bg-blue-600 rounded-lg hover:bg-blue-500 transition"
+        className="bg-[#0052FF] text-white px-6 py-2 mt-4 uppercase tracking-wide"
       >
         🔁 Test API
       </button>
 
       {timestamp && (
-        <p className="text-sm text-gray-400 mt-2">Last tested: {timestamp}</p>
+        <p className="text-sm text-gray-500 mt-2">Last tested: {timestamp}</p>
       )}
 
-      <div className="text-left mt-6 w-full max-w-3xl bg-gray-800 p-4 rounded-lg overflow-auto">
-        <h2 className="text-lg mb-2">Ethereum Response:</h2>
-        <pre className="text-xs bg-black p-2 rounded">{JSON.stringify(ethResponse, null, 2)}</pre>
+      <div className="text-left mt-8 w-full max-w-3xl bg-gray-100 p-4 overflow-auto border border-gray-200">
+        <h2 className="text-lg mb-2 text-[#0052FF]">Ethereum Response:</h2>
+        <pre className="text-xs">{JSON.stringify(ethResponse, null, 2)}</pre>
       </div>
 
-      <div className="text-left mt-6 w-full max-w-3xl bg-gray-800 p-4 rounded-lg overflow-auto">
-        <h2 className="text-lg mb-2">Base Response:</h2>
-        <pre className="text-xs bg-black p-2 rounded">{JSON.stringify(baseResponse, null, 2)}</pre>
+      <div className="text-left mt-8 w-full max-w-3xl bg-gray-100 p-4 overflow-auto border border-gray-200">
+        <h2 className="text-lg mb-2 text-[#0052FF]">Base Response:</h2>
+        <pre className="text-xs">{JSON.stringify(baseResponse, null, 2)}</pre>
       </div>
     </main>
   );
