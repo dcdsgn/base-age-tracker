@@ -43,10 +43,36 @@ export default function Home(){
     if (!apiKey) return 'Error'
     let baseUrl = network==='base' ? 'https://api.basescan.org/api' : 'https://api.etherscan.io/api'
     const chainId = network==='base' ? 8453 : 1
-    const url = `${baseUrl}?chainid=${chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`
-    try {
-      const res = await fetch(url)
-      const data = await res.json()
+// --- Fetch transactions for Ethereum or Base ---
+const url = `${baseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+let res = await fetch(url);
+let data = await res.json();
+
+// --- Fallback: if no standard transactions, check token transfers ---
+if ((!data.result || data.result.length === 0) && baseUrl.includes("basescan")) {
+  console.log("No standard txs found, checking token transfers...");
+  const tokenUrl = `${baseUrl}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+  const tokenRes = await fetch(tokenUrl);
+  const tokenData = await tokenRes.json();
+
+  if (tokenData.result && tokenData.result.length > 0) {
+    data.result = tokenData.result;
+    console.log("Token txs found:", tokenData.result.length);
+  } else {
+    console.log("No txs or token txs found on Base.");
+  }
+}
+
+// --- Process the transaction list ---
+if (data.result && data.result.length > 0) {
+  const firstTx = data.result[0];
+  const firstTimestamp = parseInt(firstTx.timeStamp) * 1000;
+  const days = Math.floor((Date.now() - firstTimestamp) / (1000 * 60 * 60 * 24));
+  return days;
+} else {
+  return "No txs";
+}
+
       if (data && data.status === '1' && Array.isArray(data.result) && data.result.length>0){
         const first = Number(data.result[0].timeStamp)*1000
         const days = Math.floor((Date.now() - first)/(1000*60*60*24))
