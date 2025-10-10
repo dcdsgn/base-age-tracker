@@ -1,142 +1,105 @@
-import Head from 'next/head'
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from "react";
+import { ethers } from "ethers";
 
-export default function Home(){
-  const [address, setAddress] = useState(null)
-  const [ethDays, setEthDays] = useState(null)
-  const [baseDays, setBaseDays] = useState(null)
-  const [loadingEth, setLoadingEth] = useState(false)
-  const [loadingBase, setLoadingBase] = useState(false)
+export default function Home() {
+  const [address, setAddress] = useState("");
+  const [ethAge, setEthAge] = useState("");
+  const [baseAge, setBaseAge] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(()=>{
-    // auto connect if MetaMask present (doesn't request permission)
-    if (typeof window !== 'undefined' && window.ethereum && window.ethereum.selectedAddress) {
-      setAddress(window.ethereum.selectedAddress)
-    }
-  },[])
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY;
 
-  async function connect(){
-    if (!window.ethereum) {
-      alert('Please install MetaMask')
-      return
-    }
+  const fetchAge = async (chain) => {
     try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
-      const acct = accounts[0]
-      setAddress(acct)
-      fetchAges(acct)
-    } catch(e){
-      console.error(e)
-    }
-  }
+      const baseUrl =
+        chain === "eth"
+          ? "https://api.etherscan.io/api"
+          : "https://api.basescan.org/api";
 
-  async function fetchAges(acct){
-    setLoadingEth(true); setLoadingBase(true)
-    const eth = await fetchDays(acct, 'ethereum')
-    const base = await fetchDays(acct, 'base')
-    setEthDays(eth); setBaseDays(base)
-    setLoadingEth(false); setLoadingBase(false)
-  }
+      const url = `${baseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+      let res = await fetch(url);
+      let data = await res.json();
 
-  async function fetchDays(address, network){
-    const apiKey = process.env.NEXT_PUBLIC_API_KEY || ''
-    if (!apiKey) return 'Error'
-    let baseUrl = network==='base' ? 'https://api.basescan.org/api' : 'https://api.etherscan.io/api'
-    const chainId = network==='base' ? 8453 : 1
-// --- Fetch transactions for Ethereum or Base ---
-const url = `${baseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
-let res = await fetch(url);
-let data = await res.json();
+      // Fallback: check token transfers if no regular txs
+      if ((!data.result || data.result.length === 0) && chain === "base") {
+        console.log("No standard txs found, checking token transfers...");
+        const tokenUrl = `${baseUrl}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
+        const tokenRes = await fetch(tokenUrl);
+        const tokenData = await tokenRes.json();
 
-// --- Fallback: if no standard transactions, check token transfers ---
-if ((!data.result || data.result.length === 0) && baseUrl.includes("basescan")) {
-  console.log("No standard txs found, checking token transfers...");
-  const tokenUrl = `${baseUrl}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
-  const tokenRes = await fetch(tokenUrl);
-  const tokenData = await tokenRes.json();
-
-  if (tokenData.result && tokenData.result.length > 0) {
-    data.result = tokenData.result;
-    console.log("Token txs found:", tokenData.result.length);
-  } else {
-    console.log("No txs or token txs found on Base.");
-  }
-}
-
-// --- Process the transaction list ---
-if (data.result && data.result.length > 0) {
-  const firstTx = data.result[0];
-  const firstTimestamp = parseInt(firstTx.timeStamp) * 1000;
-  const days = Math.floor((Date.now() - firstTimestamp) / (1000 * 60 * 60 * 24));
-  return days;
-} else {
-  return "No txs";
-}
-
-      if (data && data.status === '1' && Array.isArray(data.result) && data.result.length>0){
-        const first = Number(data.result[0].timeStamp)*1000
-        const days = Math.floor((Date.now() - first)/(1000*60*60*24))
-        return days
-      } else if (data && data.status === '0') {
-        return 'No txs'
-      } else {
-        console.warn('bad response', data)
-        return 'Error'
+        if (tokenData.result && tokenData.result.length > 0) {
+          data.result = tokenData.result;
+          console.log("Token txs found:", tokenData.result.length);
+        } else {
+          console.log("No txs or token txs found on Base.");
+        }
       }
-    } catch(e){
-      console.error(e)
-      return 'Error'
+
+      if (data.result && data.result.length > 0) {
+        const firstTx = data.result[0];
+        const firstTimestamp = parseInt(firstTx.timeStamp) * 1000;
+        const days = Math.floor((Date.now() - firstTimestamp) / (1000 * 60 * 60 * 24));
+        return days;
+      } else {
+        return "No txs";
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      return "Error";
     }
-  }
+  };
 
-  function badgeFor(days){
-    if (typeof days !== 'number') return ''
-    if (days>=365) return '• Veteran'
-    if (days>=30) return '• Active'
-    return '• New'
-  }
+  const connectWallet = async () => {
+    if (window.ethereum) {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      setAddress(accounts[0]);
+    }
+  };
 
-  return <>
-    <Head>
-      <title>Base Onchain Age Tracker</title>
-      <meta name="theme-color" content="#0052FF" />
-      <link rel="icon" href="/favicon.svg" />
-    </Head>
+  useEffect(() => {
+    const loadData = async () => {
+      if (!address) return;
+      setLoading(true);
+      const eth = await fetchAge("eth");
+      const base = await fetchAge("base");
+      setEthAge(eth);
+      setBaseAge(base);
+      setLoading(false);
+    };
+    loadData();
+  }, [address]);
 
-    <main className="min-h-screen flex flex-col">
-      <div className="container flex-grow flex items-center justify-center">
-        <div className="w-full">
-          <h1 className="text-white text-3xl font-semibold mb-6">Base Onchain Age Tracker</h1>
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#0052FF] text-white">
+      <main className="flex flex-col items-center gap-6">
+        <h1 className="text-3xl font-bold mt-10">Base Onchain Age Tracker</h1>
+        {address ? (
+          <>
+            <p>Connected: {address}</p>
 
-          <div className="card fade-in">
-            {!address ? (
-              <div className="flex items-center justify-center">
-                <button onClick={connect} className="btn-flat">Connect Wallet</button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <p className="text-white text-sm">Connected: <span className="font-mono">{address}</span></p>
+            <div className="text-center mt-4">
+              <h2 className="text-xl font-semibold">Ethereum age</h2>
+              <p>{loading ? "Loading..." : ethAge === "No txs" ? "No txs" : ethAge + " days • Veteran"}</p>
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm text-white/90 uppercase">Ethereum age</p>
-                    <p className="text-2xl font-medium mt-1">{loadingEth ? 'Loading...' : (ethDays === null ? '—' : (typeof ethDays === 'number' ? `${ethDays} days ${badgeFor(ethDays)}` : ethDays))}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-white/90 uppercase">Base age</p>
-                    <p className="text-2xl font-medium mt-1">{loadingBase ? 'Loading...' : (baseDays === null ? '—' : (typeof baseDays === 'number' ? `${baseDays} days ${badgeFor(baseDays)}` : baseDays))}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+            <div className="text-center mt-4">
+              <h2 className="text-xl font-semibold">Base age</h2>
+              <p>{loading ? "Loading..." : baseAge}</p>
+            </div>
+          </>
+        ) : (
+          <button
+            onClick={connectWallet}
+            className="bg-white text-[#0052FF] px-6 py-2 mt-4 font-medium uppercase"
+          >
+            Connect Wallet
+          </button>
+        )}
+      </main>
 
-      <footer className="footer-fixed">
-        Built for Base ⚡ by dcdsgn.eth · <a href="/debug" target="_blank" className="underline text-white">Debug</a>
+      <footer className="fixed bottom-4 text-center w-full text-sm text-white">
+        Built for Base ⚡ by dcdsgn.eth · Debug
       </footer>
-    </main>
-  </>
-
+    </div>
+  );
 }
