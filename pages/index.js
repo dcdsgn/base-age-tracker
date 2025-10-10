@@ -41,7 +41,7 @@ export default function Home(){
   async function fetchDays(address, network){
     const apiKey = process.env.NEXT_PUBLIC_API_KEY || ''
     if (!apiKey) return 'Error'
-    let baseUrl = network==='base' ? 'https://api.basescan.org/v2/api' : 'https://api.etherscan.io/v2/api'
+    let baseUrl = network==='base' ? 'https://api.basescan.org/api' : 'https://api.etherscan.io/v2/api'
     const chainId = network==='base' ? 8453 : 1
     const url = `${baseUrl}?chainid=${chainId}&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`
     try {
