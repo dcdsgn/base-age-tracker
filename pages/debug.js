@@ -19,7 +19,7 @@ export default function Debug(){
     const key = process.env.NEXT_PUBLIC_API_KEY || ''
     const urls = {
       eth: `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${address}&sort=asc&apikey=${key}`,
-      base: `https://api.basescan.org/v2/api?chainid=8453&module=account&action=txlist&address=${address}&sort=asc&apikey=${key}`
+      base: `https://api.basescan.org/api?chainid=8453&module=account&action=txlist&address=${address}&sort=asc&apikey=${key}`
     }
     try {
       const r1 = await fetch(urls.eth); const d1 = await r1.json(); setEthResponse(d1)
