@@ -13,45 +13,55 @@ export default function Home() {
     try {
       const baseUrl =
         chain === "eth"
-          ? "https://api.etherscan.io/api"
-          : "https://api.basescan.org/api";
+          ? "https://api.etherscan.io/v2/api"
+          : "https://api.basescan.org/v2/api";
 
       const url = `${baseUrl}?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
       let res = await fetch(url);
       let data = await res.json();
+      console.log(`${chain.toUpperCase()} raw response:`, data);
 
-      // Fallback: check token transfers if no regular txs
+      // fallback на токен-транзакции
       if ((!data.result || data.result.length === 0) && chain === "base") {
-        console.log("No standard txs found, checking token transfers...");
+        console.log("No regular txs found, checking token txs...");
         const tokenUrl = `${baseUrl}?module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=asc&apikey=${apiKey}`;
         const tokenRes = await fetch(tokenUrl);
         const tokenData = await tokenRes.json();
-
         if (tokenData.result && tokenData.result.length > 0) {
           data.result = tokenData.result;
           console.log("Token txs found:", tokenData.result.length);
-        } else {
-          console.log("No txs or token txs found on Base.");
         }
       }
 
       if (data.result && data.result.length > 0) {
         const firstTx = data.result[0];
-        const firstTimestamp = parseInt(firstTx.timeStamp) * 1000;
-        const days = Math.floor((Date.now() - firstTimestamp) / (1000 * 60 * 60 * 24));
+        const ts =
+          firstTx.timeStamp || firstTx.timestamp || firstTx.blockTimestamp || null;
+
+        if (!ts || isNaN(ts)) {
+          console.warn(`Invalid timestamp in ${chain} tx`, firstTx);
+          return "Error";
+        }
+
+        const firstTimestamp = parseInt(ts) * 1000;
+        const days = Math.floor(
+          (Date.now() - firstTimestamp) / (1000 * 60 * 60 * 24)
+        );
         return days;
       } else {
         return "No txs";
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
+    } catch (err) {
+      console.error("Error fetching data for", chain, err);
       return "Error";
     }
   };
 
   const connectWallet = async () => {
     if (window.ethereum) {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
       setAddress(accounts[0]);
     }
   };
@@ -79,12 +89,28 @@ export default function Home() {
 
             <div className="text-center mt-4">
               <h2 className="text-xl font-semibold">Ethereum age</h2>
-              <p>{loading ? "Loading..." : ethAge === "No txs" ? "No txs" : ethAge + " days • Veteran"}</p>
+              <p>
+                {loading
+                  ? "Loading..."
+                  : ethAge === "No txs"
+                  ? "No txs"
+                  : ethAge === "Error"
+                  ? "Error"
+                  : ethAge + " days • Veteran"}
+              </p>
             </div>
 
             <div className="text-center mt-4">
               <h2 className="text-xl font-semibold">Base age</h2>
-              <p>{loading ? "Loading..." : baseAge}</p>
+              <p>
+                {loading
+                  ? "Loading..."
+                  : baseAge === "No txs"
+                  ? "No txs"
+                  : baseAge === "Error"
+                  ? "Error"
+                  : baseAge + " days • Onchain"}
+              </p>
             </div>
           </>
         ) : (
